@@ -8,24 +8,20 @@ echo "🔥 INSTALLING GCASH VENDO..."
 pkg update -y
 pkg upgrade -y
 
-# ================= INSTALL PACKAGES =================
+# ================= INSTALL =================
 pkg install php git openssl -y
 
-# ================= REMOVE OLD FILES =================
-echo ""
-echo "🗑 Removing old files..."
-
+# ================= REMOVE OLD =================
 rm -rf ~/htdocs
-
-# ================= CREATE NEW HTDOCS =================
 mkdir -p ~/htdocs
 
 # ================= COPY FILES =================
 cp -r * ~/htdocs/
 
+# ================= GO TO HTDOCS =================
 cd ~/htdocs
 
-# ================= GENERATE RANDOM API KEY =================
+# ================= CREATE API KEY =================
 API_KEY=$(openssl rand -hex 6)
 
 # ================= UPDATE CONFIG =================
@@ -36,18 +32,17 @@ cat > config.json <<EOF
 }
 EOF
 
-# ================= GET LOCAL IP =================
-IP=$(ip addr show wlan0 | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+# ================= GET IP =================
+IP=$(ip route get 1 | awk '{print $7;exit}')
 
-# fallback
 if [ -z "$IP" ]; then
 IP="127.0.0.1"
 fi
 
-# ================= BUILD LINKS =================
-INDEX_LINK="http://$IP:8080"
-API_LINK="http://$IP:8080/api.php?key=$API_KEY&amount=10"
+# ================= LINKS =================
+INDEX_LINK="http://$IP:8080/index.php"
 ADMIN_LINK="http://$IP:8080/admin.php"
+API_LINK="http://$IP:8080/api.php?key=$API_KEY&amount=10"
 
 clear
 
