@@ -2,74 +2,86 @@
 
 clear
 
-echo "🔥 INSTALLING GCASH VENDO..."
+echo "========================================"
+echo " INSTALLING GCASH VENDO SYSTEM"
+echo "========================================"
 
-# ================= UPDATE =================
 pkg update -y
-pkg upgrade -y
+pkg install -y php git openssl-tool
 
-# ================= INSTALL =================
-pkg install php git openssl -y
+cd ~
 
-# ================= REMOVE OLD =================
-rm -rf ~/htdocs
-mkdir -p ~/htdocs
+rm -rf update-buy-gcash
 
-# ================= COPY FILES =================
-cp -r * ~/htdocs/
+git clone https://github.com/alpisowifi-ops/update-buy-gcash.git
 
-# ================= GO TO HTDOCS =================
-cd ~/htdocs
+cd update-buy-gcash || exit
 
-# ================= CREATE API KEY =================
-API_KEY=$(openssl rand -hex 6)
+# =========================
+# RANDOM API KEY
+# =========================
+KEY=$(openssl rand -hex 8)
 
-# ================= UPDATE CONFIG =================
+# =========================
+# CREATE CONFIG
+# =========================
 cat > config.json <<EOF
 {
-    "api_key": "$API_KEY",
-    "earnings": 0
+  "api_key": "$KEY",
+  "qr": "qr.jpg",
+  "rates": [
+    {
+      "amount": 10,
+      "label": "10 Hours"
+    },
+    {
+      "amount": 20,
+      "label": "4 Hours"
+    },
+    {
+      "amount": 30,
+      "label": "1 Day"
+    }
+  ],
+  "earnings": 0
 }
 EOF
 
-# ================= GET IP =================
-IP=$(ip route get 1 | awk '{print $7;exit}')
+# =========================
+# CREATE FILES
+# =========================
+echo "[]" > vouchers.json
+echo "[]" > logs.json
+echo "{}" > tokens.json
+echo "" > current.txt
 
-if [ -z "$IP" ]; then
-IP="127.0.0.1"
-fi
-
-# ================= LINKS =================
-INDEX_LINK="http://$IP:8080/index.php"
-ADMIN_LINK="http://$IP:8080/admin.php"
-API_LINK="http://$IP:8080/api.php?key=$API_KEY&amount=10"
+# =========================
+# DISPLAY INFO
+# =========================
+IP=$(ifconfig wlan0 | grep "inet " | awk '{print $2}')
 
 clear
 
-echo ""
-echo "====================================="
+echo "========================================"
 echo "✅ GCASH VENDO INSTALLED SUCCESSFULLY"
-echo "====================================="
+echo "========================================"
 echo ""
-
 echo "🌐 INDEX:"
-echo "$INDEX_LINK"
+echo "http://127.0.0.1:8080/index.php"
 echo ""
-
 echo "⚙️ ADMIN:"
-echo "$ADMIN_LINK"
+echo "http://127.0.0.1:8080/admin.php"
 echo ""
-
 echo "🔑 RANDOM API KEY:"
-echo "$API_KEY"
+echo "$KEY"
 echo ""
-
 echo "⚡ MACRODROID API:"
-echo "$API_LINK"
+echo "http://127.0.0.1:8080/api.php?key=$KEY&amount=10"
 echo ""
-
+echo "📡 WIFI API:"
+echo "http://$IP:8080/api.php?key=$KEY&amount=10"
+echo ""
 echo "🚀 SERVER STARTING..."
 echo ""
 
-# ================= START SERVER =================
 php -S 0.0.0.0:8080
