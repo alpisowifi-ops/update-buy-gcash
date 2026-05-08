@@ -1,58 +1,80 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
 clear
-echo "🔥 INSTALLING PISO WIFI SYSTEM (PRO)..."
 
-set -e
+echo "🔥 INSTALLING GCASH VENDO..."
 
-# ================= INSTALL =================
-pkg update -y && pkg upgrade -y
-pkg install php git tmux iproute2 -y
+# ================= UPDATE =================
+pkg update -y
+pkg upgrade -y
 
-# ================= CLEAN =================
-echo "🧹 Cleaning old install..."
+# ================= INSTALL PACKAGES =================
+pkg install php git openssl -y
+
+# ================= REMOVE OLD FILES =================
+echo ""
+echo "🗑 Removing old files..."
+
 rm -rf ~/htdocs
 
-# ================= CLONE =================
-echo "📥 Cloning your system..."
-git clone https://github.com/YOUR-REPO/YOUR-SYSTEM ~/htdocs || {
-    echo "❌ CLONE FAILED!"
-    exit 1
-}
+# ================= CREATE NEW HTDOCS =================
+mkdir -p ~/htdocs
+
+# ================= COPY FILES =================
+cp -r * ~/htdocs/
 
 cd ~/htdocs
 
-# ================= CHECK =================
-echo "🔍 Checking files..."
+# ================= GENERATE RANDOM API KEY =================
+API_KEY=$(openssl rand -hex 6)
 
-if [ ! -f "index.php" ]; then
-    echo "❌ index.php missing!"
-    exit 1
+# ================= UPDATE CONFIG =================
+cat > config.json <<EOF
+{
+    "api_key": "$API_KEY",
+    "earnings": 0
+}
+EOF
+
+# ================= GET LOCAL IP =================
+IP=$(ip addr show wlan0 | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+
+# fallback
+if [ -z "$IP" ]; then
+IP="127.0.0.1"
 fi
 
-if [ ! -f "admin.php" ]; then
-    echo "❌ admin.php missing!"
-    exit 1
-fi
+# ================= BUILD LINKS =================
+INDEX_LINK="http://$IP:8080"
+API_LINK="http://$IP:8080/api.php?key=$API_KEY&amount=10"
+ADMIN_LINK="http://$IP:8080/admin.php"
 
-# ================= PERMISSION =================
-echo "🔐 Setting permissions..."
-chmod -R 777 ~/htdocs
-
-# ================= INIT FILES =================
-echo "⚙️ Initializing files..."
-
-touch vouchers.json tokens.json logs.json current.txt
-echo "{}" > vouchers.json
-echo "{}" > tokens.json
-echo "[]" > logs.json
-echo "0" > current.txt
-
-# ================= START SERVER =================
-echo "🚀 Starting server..."
-tmux new -d -s wifi "php -S 0.0.0.0:8080"
+clear
 
 echo ""
-echo "✅ INSTALL COMPLETE!"
-echo "🌐 Open: http://$(ip route get 1 | awk '{print $7;exit}'):8080"
-echo "🔑 Admin: /admin.php"
+echo "====================================="
+echo "✅ GCASH VENDO INSTALLED SUCCESSFULLY"
+echo "====================================="
+echo ""
+
+echo "🌐 INDEX:"
+echo "$INDEX_LINK"
+echo ""
+
+echo "⚙️ ADMIN:"
+echo "$ADMIN_LINK"
+echo ""
+
+echo "🔑 RANDOM API KEY:"
+echo "$API_KEY"
+echo ""
+
+echo "⚡ MACRODROID API:"
+echo "$API_LINK"
+echo ""
+
+echo "🚀 SERVER STARTING..."
+echo ""
+
+# ================= START SERVER =================
+php -S 0.0.0.0:8080
